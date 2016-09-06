@@ -4,7 +4,7 @@ This little javascript class helps you to write more redable regex code in javas
 Just add the RegExpBuilder.js file from the js folder to your project.
 ##Usage
 
-### Instantiation
+### Installation
 ```javascript
 var builder = new RegExpBuilder();
 ```
