@@ -21,7 +21,9 @@ var regExp = builder.build();
 regExp.exec("foo");
 ```
 ## Documentation
-will be avaible soon
+Refer for the documentation this [link](http://htmlpreview.github.io/?https://github.com/KaiJanis/RegExpBuilder/blob/master/jsdoc/RegExpBuilder.html).
+
+The documentation was created with [JSDoc](https://github.com/jsdoc3/jsdoc)
 
 ## License
 Refer for the license the [license file](../master/LICENSE)
