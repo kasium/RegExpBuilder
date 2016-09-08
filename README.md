@@ -1,5 +1,5 @@
 # RegExpBuilder
-This little javascript class helps you to write more redable regex code in javascript.
+This little javascript class helps you to write more readable regex code in javascript.
 ## Installation
 Just add the RegExpBuilder.js file from the js folder to your project.
 ##Usage
