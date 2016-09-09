@@ -25,5 +25,8 @@ Refer for the documentation this [link](https://kaijanis.github.io/RegExpBuilder
 
 The documentation was created with [JSDoc](https://github.com/jsdoc3/jsdoc)
 
+## Tests
+The tests are written for qUnit. You can execute them online [here](https://kaijanis.github.io/RegExpBuilder/tests/index.html).
+
 ## License
 Refer for the license the [license file](../master/LICENSE)
