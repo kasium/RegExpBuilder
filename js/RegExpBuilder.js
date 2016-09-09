@@ -27,10 +27,12 @@ function RegExpBuilder() {
 		endMissing : "Missing open look ahaed group statement"
 	};
 
+	// adds a text to the internal pattern
 	function _add(sText) {
 		_sRegExpPattern = _sRegExpPattern + sText;
 	}
 
+	// pops a expetctet entry from the validation stack
 	function _popValidationCheck(sExpectetStackEntry) {
 		var entry = _validationStack[_validationStack.length - 1];
 		if (entry !== sExpectetStackEntry) {
@@ -39,6 +41,7 @@ function RegExpBuilder() {
 		_validationStack.pop();
 	}
 
+	// start a lookahead either negatet or not
 	function _startlookAhead(bNegate) {
 		_validationStack.push(_OPEN_LOOK_AHEAD);
 		var sSign = "=";
@@ -48,11 +51,13 @@ function RegExpBuilder() {
 		_add("(?" + sSign);
 	}
 
+	// ends a lookAhead
 	function _endLookAhead() {
 		_popValidationCheck(_OPEN_LOOK_AHEAD);
 		_add(")");
 	}
 
+	// escapes all regex characters in a string
 	function _escape(sText) {
 		var aChars = sText.split("");
 		aChars.forEach(function(sChar, iIndex) {
@@ -63,6 +68,7 @@ function RegExpBuilder() {
 		return aChars.join("");
 	}
 
+	// converts a regexp to a strin without wrapping '/'
 	function _regExpToString(oRegExp) {
 		if (!oRegExp || !oRegExp instanceof RegExp) {
 			throw new Error("The overgiven parameter is undefined, null, or not a instance of RegExp");
@@ -100,7 +106,7 @@ function RegExpBuilder() {
 		 *             if oRegExp is not a instance of RegExp
 		 */
 		matchesRegExp : function(oRegExp) {
-			_add(_regExpToString());
+			_add(_regExpToString(oRegExp));
 			return this;
 		},
 
@@ -242,7 +248,7 @@ function RegExpBuilder() {
 		 * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-word-boundary
 		 * @return {RegExpBuilder} the current instance for methode chaining
 		 */
-		macthesWordBoundary : function() {
+		matchesWordBoundary : function() {
 			_add("\\b");
 			return this;
 		},
@@ -255,7 +261,7 @@ function RegExpBuilder() {
 		 * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-non-word-boundary
 		 * @return {RegExpBuilder} the current instance for methode chaining
 		 */
-		macthesNotWordBoundary : function() {
+		matchesNotWordBoundary : function() {
 			_add("\\B");
 			return this;
 		},
@@ -328,7 +334,7 @@ function RegExpBuilder() {
 		 * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-lookahead
 		 * @return {RegExpBuilder} the current instance for methode chaining
 		 */
-		startLookAheadFor : function(sText) {
+		startLookAheadFor : function() {
 			_startlookAhead(false);
 			return this;
 		},
