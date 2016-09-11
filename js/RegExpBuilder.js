@@ -12,29 +12,39 @@
  *            exist without an openGroup statement
  * @param {boolean}[oConfig.wrapInsideGroup=false]
  *            wraps the whole generated regex pattern inside a group
+ * @param {boolean}[oConfig.wrapTextInsideGroup=true]
+ *            wraps the output of the {@link RegExpBuilder#matchesText|matchesText method} everytime
+ *            inside a group
  * @author Kai Mueller
- * @version 0.2.0
+ * @version 0.3.0
  */
-
 function RegExpBuilder(oConfig) {
 	// internal ideas:
-	// * add default not greedy attribute
-	// * add pattern possiblity
-	// * add simpler methods like matchesDigit
+	// 0.4.0 add all regex signs
+	// 0.4.0 this doesn't return a instance of RegExpBuilder
+	// 0.5.0 add default not greedy attribute
+	// 0.5.0 add default alias'es in the oConfig
+	// 0.5.0 add function to use regexbuilder
+	// 0.6.0 add pattern possiblity
+	// 0.7.0 add simpler methods like matchesDigit
+	// - method matches instad of matchesText (make it generic)
+	// - combine matchesRegExp/matchesBuilder/matchesRegEx
+	// - generic group function
 
 	"use strict";
 
-	// configuration
-	if (!oConfig) {
-		oConfig = {};
-	}
-	oConfig.groupValidation = !_isNaB(oConfig.groupValidation) ? oConfig.groupValidation : true;
-	oConfig.wrapInsideGroup = !_isNaB(oConfig.wrapInsideGroup) ? oConfig.wrapInsideGroup : false;
+	// default configuration values
+	var oDefaultValues = {
+		groupValidation : true,
+		wrapInsideGroup : false,
+		wrapTextInsideGroup : true
+	};
 
 	// internal variables
 	var _sRegExpPattern = "";
 	var _aRegexCharacters = [ "(", ")", "/", ".", "*", "?", "+", "$", "^", "=", "!" ];
 	var _validationStack = [];
+	var _oConfig = _loadConfiguration(oConfig, oDefaultValues);
 
 	// internal constants
 	var _OPEN_GROUP = {
@@ -46,6 +56,19 @@ function RegExpBuilder(oConfig) {
 		endMissing : "Missing open look ahaed group statement"
 	};
 
+	// generates configuration object
+	function _loadConfiguration(oConfiguration, oStandardValues) {
+		if (!oConfiguration) {
+			oConfiguration = {};
+		}
+		Object.keys(oStandardValues).forEach(function(sAttributeName) {
+			var bAttributeValue = oConfiguration[sAttributeName];
+			oConfiguration[sAttributeName] = !_isNaB(bAttributeValue) ? bAttributeValue : oStandardValues[sAttributeName];
+		});
+		return oConfiguration;
+	}
+
+	// is variable not a boolean
 	function _isNaB(value) {
 		return typeof (value) !== 'boolean';
 	}
@@ -59,8 +82,8 @@ function RegExpBuilder(oConfig) {
 	function _popValidationCheck(sExpectetStackEntry) {
 		var entry = _validationStack[_validationStack.length - 1];
 		if (entry !== sExpectetStackEntry) {
-			if (oConfig.groupValidation) {
-				throw new Error(sExpectetStackEntry.beginMissing);
+			if (_oConfig.groupValidation) {
+				throw new RegExpBuilderException(sExpectetStackEntry.beginMissing);
 			}
 		}
 		_validationStack.pop();
@@ -95,8 +118,8 @@ function RegExpBuilder(oConfig) {
 
 	// converts a regexp to a strin without wrapping '/'
 	function _regExpToString(oRegExp) {
-		if (!oRegExp || !oRegExp instanceof RegExp) {
-			throw new Error("The overgiven parameter is undefined, null, or not a instance of RegExp");
+		if (!oRegExp || oRegExp instanceof RegExp === false) {
+			throw new RegExpBuilderException("The overgiven parameter is undefined, null, or not a instance of RegExp");
 		}
 		return oRegExp.toString().substring(1, oRegExp.toString().length - 1);
 	}
@@ -130,11 +153,33 @@ function RegExpBuilder(oConfig) {
 		 * @param {RegExp}
 		 *            oRegExp the RegExp to add
 		 * @return {RegExpBuilder} the current an instance for method chaining
-		 * @throws {Error}
+		 * @throws {RegExpBuilderException}
 		 *             if oRegExp is not a instance of RegExp
 		 */
 		matchesRegExp : function(oRegExp) {
 			_add(_regExpToString(oRegExp));
+			return this;
+		},
+
+		/**
+		 * Adds the builded regex pattern of a regExpBuilder to the current pattern. Internally the
+		 * build method of the parameter is called. <br/> <b>NOTE: don't use</b>
+		 * 
+		 * @public
+		 * @since 0.3.0
+		 * @memberof RegExpBuilder.prototype
+		 * @param {RegExpBuilder}
+		 *            oRegExpBuilder the RegExpBuilder instance to add
+		 * @return {RegExpBuilder} the current an instance for method chaining *
+		 * @throws {RegExpBuilderException}
+		 *             if oRegExpBuilder is not a instance of RegExpBuilder
+		 */
+		matchesBuilder : function(oRegExpBuilder) {
+			// TODO RegExpBuilder problem
+			if (!oRegExpBuilder || oRegExpBuilder instanceof RegExpBuilder === false) {
+				throw new RegExpBuilderException("The overgiven object is undefined, null or not an instance of RegExpBuilder");
+			}
+			_add(this.matchesRegExp(oRegExpBuilder.build()));
 			return this;
 		},
 
@@ -189,7 +234,8 @@ function RegExpBuilder(oConfig) {
 
 		/**
 		 * Adds a matcher for this text. All characters which are used internally by regex will be
-		 * escaped
+		 * escaped. If the config attribute wrapTextInsideGroup is true than this will generare a
+		 * new regex group with the text inside. Else it using non-capturing parentheses.
 		 * 
 		 * @public
 		 * @since 0.1.0
@@ -199,10 +245,12 @@ function RegExpBuilder(oConfig) {
 		 * @return {RegExpBuilder} the current instance for method chaining
 		 */
 		matchesText : function(sText) {
-			if (sText.length < 2) {
-				_add(_escape(sText));
-			} else {
-				_add("(" + _escape(sText) + ")");
+			if (sText.length !== 0) {
+				if (_oConfig.wrapTextInsideGroup) {
+					_add("(" + _escape(sText) + ")");
+				} else {
+					_add("(?:" + _escape(sText) + ")");
+				}
 			}
 			return this;
 		},
@@ -230,6 +278,18 @@ function RegExpBuilder(oConfig) {
 			} else {
 				_add("{" + iMin + "}");
 			}
+			return this;
+		},
+
+		/**
+		 * Alias for {@link RegExpBuilder#matchesTimes|matchesTimes}
+		 * 
+		 * @function
+		 * @since 0.3.0
+		 * @memberof RegExpBuilder.prototype
+		 */
+		withConstraint : function() {
+			this.matchesTimes.apply(this, arguments);
 			return this;
 		},
 
@@ -363,7 +423,7 @@ function RegExpBuilder(oConfig) {
 		 * @memberof RegExpBuilder.prototype
 		 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-capturing-parentheses}
 		 * @return {RegExpBuilder} the current instance for method chaining
-		 * @throws {Error}
+		 * @throws {RegExpBuilderException}
 		 *             if a group is closed with no open group and the corresponding attribute in
 		 *             the config is set to true
 		 */
@@ -396,6 +456,7 @@ function RegExpBuilder(oConfig) {
 		 */
 		ifFollowedBy : function() {
 			this.startLookAheadFor.apply(this, arguments);
+			return this;
 		},
 
 		/**
@@ -423,6 +484,7 @@ function RegExpBuilder(oConfig) {
 		 */
 		match : function() {
 			this.endLookAhead.apply(this, arguments);
+			return this;
 		},
 		/**
 		 * Starts a negated look ahead. This is equivalent to the regex function '(?!'.
@@ -447,6 +509,7 @@ function RegExpBuilder(oConfig) {
 		 */
 		ifNotFollwedBy : function() {
 			this.startNegatedLookAhead.apply(this, arguments);
+			return this;
 		},
 
 		/**
@@ -511,6 +574,50 @@ function RegExpBuilder(oConfig) {
 		},
 
 		/**
+		 * This method has no impact to the pattern of this instance. It is only for better
+		 * readabillity. <br/>
+		 * <p>
+		 * <i>matchesText("abc").and().matchesText("def")</i>
+		 * </p>
+		 * has the same impact as
+		 * <p>
+		 * <i>matchesText("abc").matchesText("def")</i>
+		 * </p>
+		 * 
+		 * @public
+		 * @since 0.3.0
+		 * @memberof RegExpBuilder.prototype
+		 * @return {RegExpBuilder} the current instance for method chaining
+		 */
+		and : function() {
+			return this;
+		},
+
+		// ######### object methods #########
+
+		/**
+		 * Returns the internal representation of the regex pattern as a string without wrapping
+		 * '/'. The config attribute 'wrapInsideGroup' has here no effect.
+		 * 
+		 * @public
+		 * @since 0.3.0
+		 * @memberof RegExpBuilder.prototype
+		 * @return {RegExpBuilder} the current instance for method chaining
+		 * @throws {RegExpBuilderException}
+		 *             if the method for the alias not exists or the name of the alias is used by
+		 *             somebody other
+		 */
+		addAlias : function(sMethodName, sAliasName) {
+			if (typeof (this[sMethodName]) !== 'function') {
+				throw new RegExpBuilderException("A method with the name " + sMethodName + " don't exists");
+			}
+			if (this[sAliasName]) {
+				throw new RegExpBuilderException("A " + typeof (this[sAliasName]) + " with the name " + sAliasName + " allready exists");
+			}
+			this[sAliasName] = this[sMethodName];
+		},
+
+		/**
 		 * Returns the internal representation of the regex pattern as a string without wrapping
 		 * '/'. The config attribute 'wrapInsideGroup' has here no effect.
 		 * 
@@ -521,6 +628,19 @@ function RegExpBuilder(oConfig) {
 		 */
 		toString : function() {
 			return _sRegExpPattern;
+		},
+
+		/**
+		 * Returns the configuration of this instance. Refer for the single attributes the parameter
+		 * 'oConfig' of the constructor
+		 * 
+		 * @public
+		 * @since 0.3.0
+		 * @memberof RegExpBuilder.prototype
+		 * @return {object} the current configuration object
+		 */
+		getConfiguration : function() {
+			return _oConfig;
 		},
 
 		/**
@@ -539,23 +659,45 @@ function RegExpBuilder(oConfig) {
 		/**
 		 * Returns a new RegExp which matches exact the regex pattern which was build with the
 		 * methods of this class. A validation for not closed groups is done if the config attribute
-		 * 'groupValidation' is set to true
+		 * 'groupValidation' is set to true. After this method was called, this instance shouldn't
+		 * be used furthermore for regex building, becuase this can produces unexpectet regex
+		 * pattern.
 		 * 
 		 * @public
 		 * @since 0.1.0
 		 * @memberof RegExpBuilder.prototype
 		 * @return {RegExp} a new RegExp which matches the build pattern
-		 * @throws {Error}
+		 * @throws {RegExpBuilderException}
 		 *             if open groups existing and the corresponding config attribute is set
+		 * @throws {SytaxError}
+		 *             if something is wrong with the regex. This is thrown by the RegExp object
 		 */
 		build : function() {
-			if (oConfig.groupValidation && _validationStack.length !== 0) {
-				throw new Error(_validationStack[_validationStack.length - 1].endMissing);
+			if (_oConfig.groupValidation && _validationStack.length !== 0) {
+				throw new RegExpBuilderException(_validationStack[_validationStack.length - 1].endMissing);
 			}
-			if (oConfig.wrapInsideGroup) {
-				return new RegExp("(" + _sRegExpPattern + ")");
+			if (_oConfig.wrapInsideGroup) {
+				_sRegExpPattern = "(" + _sRegExpPattern + ")";
 			}
 			return new RegExp(_sRegExpPattern);
 		}
 	};
 }
+
+/**
+ * Custom exception for the RegExpBuilder
+ * 
+ * @public
+ * @param {string}
+ *            sMessage the message of the exception
+ * @version 1.0.0
+ * @author Kai Mueller
+ * @constructor RegExpBuilderException
+ */
+function RegExpBuilderException(sMessage) {
+	this.message = sMessage;
+	this.stack = (new Error()).stack;
+}
+RegExpBuilderException.prototype = Object.create(Error.prototype);
+RegExpBuilderException.prototype.name = "RegExpBuilderException";
+RegExpBuilderException.prototype.constructor = RegExpBuilderException;
