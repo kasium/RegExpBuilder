@@ -3,30 +3,46 @@ This little javascript class helps you to write more readable regex code in java
 ## Installation
 Just add the RegExpBuilder.js file from the js folder to your project.
 
-##Usage
+##Examples
 
-### Instantiation
+### Floating Point Numbers
 ```javascript
 var builder = new RegExpBuilder();
+builder.startLine().matchesFor("-+").zeroOrOneTimes()
+ .and().matchesFor("0-9").zeroOrMoreTimes()
+ .and().matchesText(".").zeroOrOneTimes()
+ .and().matchesFor("0-9").oneOrMoreTimes()
+ .beginGroup()
+	.matchesFor("eE")
+	.and().matchesFor("-+").zeroOrOneTimes()
+	.matchesFor("0-9").oneOrMoreTimes()
+ .endGroup().oneOrMoreTimes().endLine();
+ var regExp = builder.build();
 ```
-It is possible to add a configuration object.
+The and() method is only optional so theoretical it could be omitting.
+
+This is equivalent to:
 ```javascript
-var builder = new RegExpBuilder({
-	groupValidation: false
-});
+var regExp = new RegExp("^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$");
 ```
-### Build your regex
-All methods except some special ones allow chaining.
+Or without using a string:
 ```javascript
-builder.beginGroup().matchesText("foo").endGroup().oneOrMoreTimes().or().matchesFor("0-9").oneOrMoreTimes();
-//equivalent to /(foo)+|[0-9]+/
+var regExp = /^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/;
 ```
 
-### Convert to a RegExp object
-Finally with the *build()* method you can convert the builder to a RegExp object
+### Name selecttion
+Get the first last name with a beginning 'A'.
+
+Text: Lewis,Amelia;Winston,Oliver;Adams,Emily;Ashton,Thomas
 ```javascript
+var regExp = new RegExp("A[a-zA-Z]*,[a-zA-Z]+");
+```
+Or with the builder:
+```javascript
+var builder = new RegExpBuilder();
+builder.matchesText("A").matchesFor("a-zA-Z").zeroOrMoreTimes().matchesText(",")
+  matchesFor("a-zA-Z").oneOrMoreTimes();
 var regExp = builder.build();
-regExp.exec("foo");
 ```
 
 ## Documentation
