@@ -1,6 +1,6 @@
 "use strict";
 
-var sTestTextEscapedGroups = "(ab\\?)";
+var sTestTextEscapedGroups = "(?:ab\\?)";
 var sTestTextGroups = "(ab?)";
 var sTestText = "ab?";
 var sTestTextExcaped = "ab\\?";
@@ -30,7 +30,7 @@ QUnit.module("RegExpBuilder - Configuration associatied Tests", function() {
 		var oDefaultValues = {
 			groupValidation : true,
 			wrapInsideGroup : false,
-			wrapTextInsideGroup : true
+			wrapTextInsideGroup : false
 		};
 		var oConfig = new RegExpBuilder().getConfiguration();
 		assert.deepEqual(oDefaultValues, oConfig, "The default values are the same as expectet");
@@ -38,7 +38,7 @@ QUnit.module("RegExpBuilder - Configuration associatied Tests", function() {
 		var oOtherValues = {
 			groupValidation : false,
 			wrapInsideGroup : true,
-			wrapTextInsideGroup : false
+			wrapTextInsideGroup : true
 		};
 		oConfig = new RegExpBuilder(oOtherValues).getConfiguration();
 		assert.deepEqual(oOtherValues, oConfig, "All properties are customisable");
@@ -143,6 +143,7 @@ QUnit.module("RegExpBuilder - Method associatied Tests", function() {
 		matchesRegExp : [ sTestTextExcaped, new RegExp(sTestTextExcaped) ],
 		matchesNotFor : [ "[^" + sTestText + "]", sTestText ],
 		matchesText : [ sTestTextEscapedGroups, sTestText ],
+		matchesText : [ "a", "a" ],
 		matchesTimes : [ "{1}", 1 ],
 		withConstraint : [ "{1}", 1 ],
 		matchesTimes : [ "{1,3}", 1, 3 ],
@@ -209,7 +210,7 @@ QUnit.module("RegExpBuilder - Method associatied Tests", function() {
 		}, "If called a non RegExp instance the method throws an error");
 
 		var sRegEx = new RegExpBuilder().matchesRegExp(new RegExp("abc")).matchesText("123").toString();
-		assert.strictEqual("abc(123)", sRegEx, "The regExp was successfully added");
+		assert.strictEqual("abc(?:123)", sRegEx, "The regExp was successfully added");
 	});
 
 	QUnit.test("clear - Test for the method clear", function(assert) {

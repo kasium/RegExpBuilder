@@ -12,11 +12,11 @@
  *            exist without an openGroup statement
  * @param {boolean}[oConfig.wrapInsideGroup=false]
  *            wraps the whole generated regex pattern inside a group
- * @param {boolean}[oConfig.wrapTextInsideGroup=true]
+ * @param {boolean}[oConfig.wrapTextInsideGroup=false]
  *            wraps the output of the {@link RegExpBuilder#matchesText|matchesText method} everytime
  *            inside a group
  * @author Kai Mueller
- * @version 0.3.0
+ * @version 0.3.1
  */
 function RegExpBuilder(oConfig) {
 	// internal ideas:
@@ -37,7 +37,7 @@ function RegExpBuilder(oConfig) {
 	var oDefaultValues = {
 		groupValidation : true,
 		wrapInsideGroup : false,
-		wrapTextInsideGroup : true
+		wrapTextInsideGroup : false
 	};
 
 	// internal variables
@@ -248,6 +248,8 @@ function RegExpBuilder(oConfig) {
 			if (sText.length !== 0) {
 				if (_oConfig.wrapTextInsideGroup) {
 					_add("(" + _escape(sText) + ")");
+				} else if (sText.length === 1) {
+					_add(_escape(sText));
 				} else {
 					_add("(?:" + _escape(sText) + ")");
 				}
