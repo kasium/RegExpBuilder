@@ -147,11 +147,12 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method matchesFreeText
 	 * @param {string}
 	 *            sText text to add
 	 * @return {RegExpBuilder} the current instance for method chaining
 	 */
-	this.matchesFreeText = function(sText) {
+	this.matchesFreeText = function matchesFreeText(sText) {
 		_add(sText);
 		return this;
 	};
@@ -162,6 +163,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method matchesRegExp
 	 * @param {RegExp}
 	 *            oRegExp the RegExp to add
 	 * @return {RegExpBuilder} the current an instance for method chaining
@@ -180,6 +182,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.3.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method matchesBuilder
 	 * @param {RegExpBuilder}
 	 *            oRegExpBuilder the RegExpBuilder instance to add
 	 * @return {RegExpBuilder} the current an instance for method chaining *
@@ -201,6 +204,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method matchesAny
 	 * @see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-dot}
 	 * @return {RegExpBuilder} the current instance for method chaining
 	 */
@@ -216,6 +220,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method matchesFor
 	 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-character-set}
 	 * @param {string}
 	 *            sCharacters a list of the characters to match
@@ -233,6 +238,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.4.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method matchesAnyDigit
 	 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-character-set}
 	 * @return {RegExpBuilder} the current instance for method chaining
 	 */
@@ -247,6 +253,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.4.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method matchesLetter
 	 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-character-set}
 	 * @return {RegExpBuilder} the current instance for method chaining
 	 */
@@ -261,6 +268,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.4.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method matchesUppercaseLetter
 	 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-character-set}
 	 * @return {RegExpBuilder} the current instance for method chaining
 	 */
@@ -275,6 +283,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.4.0
 	 * @memberof RegExpBuilder.prototype
+	 * @mehod matchesLowercaseLetter
 	 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-character-set}
 	 * @return {RegExpBuilder} the current instance for method chaining
 	 */
@@ -289,6 +298,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method matchesNotFor
 	 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-negated-character-set}
 	 * @param {string}
 	 *            sCharacters a list of the characters not to match
@@ -307,6 +317,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method matchesText
 	 * @param {string}
 	 *            sText text to match
 	 * @return {RegExpBuilder} the current instance for method chaining
@@ -334,6 +345,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method matchesTimes
 	 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-quantifier-range}
 	 * @param {int}
 	 *            iMin minimum times to match or without the parameters iMax exact how often
@@ -353,7 +365,7 @@ function RegExpBuilder(oConfig) {
 	/**
 	 * Alias for {@link RegExpBuilder#matchesTimes|matchesTimes}
 	 * 
-	 * @function
+	 * @method withConstraint
 	 * @since 0.3.0
 	 * @memberof RegExpBuilder.prototype
 	 */
@@ -369,6 +381,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method oneOrMoreTimes
 	 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-plus}
 	 * @return {RegExpBuilder} the current instance for method chaining
 	 */
@@ -384,6 +397,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method zeroOrMoreTimes
 	 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-asterisk}
 	 * @return {RegExpBuilder} the current instance for method chaining
 	 */
@@ -399,6 +413,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method zeroOrOneTimes
 	 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-questionmark}
 	 * @return {RegExpBuilder} the current instance for method chaining
 	 */
@@ -415,6 +430,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method matchesWordBoundary
 	 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-word-boundary}
 	 * @return {RegExpBuilder} the current instance for method chaining
 	 */
@@ -429,6 +445,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method matchesNotWordBoundary
 	 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-non-word-boundary}
 	 * @return {RegExpBuilder} the current instance for method chaining
 	 */
@@ -443,6 +460,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method beginLine
 	 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-caret}
 	 * @return {RegExpBuilder} the current instance for method chaining
 	 */
@@ -457,6 +475,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method endLine
 	 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-dollar}
 	 * @return {RegExpBuilder} the current instance for method chaining
 	 */
@@ -473,6 +492,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method beginGroup
 	 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-capturing-parentheses}
 	 * @return {RegExpBuilder} the current instance for method chaining
 	 */
@@ -489,6 +509,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method endGroup
 	 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-capturing-parentheses}
 	 * @return {RegExpBuilder} the current instance for method chaining
 	 * @throws {RegExpBuilderException}
@@ -507,6 +528,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method startLookAheadFor
 	 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-lookahead}
 	 * @return {RegExpBuilder} the current instance for method chaining
 	 */
@@ -518,7 +540,7 @@ function RegExpBuilder(oConfig) {
 	/**
 	 * Alias for {@link RegExpBuilder#startLookAheadFor|startLookAheadFor}
 	 * 
-	 * @function
+	 * @method ifFollowedBy
 	 * @since 0.2.0
 	 * @memberof RegExpBuilder.prototype
 	 */
@@ -533,6 +555,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method endLookAhead
 	 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-lookahead}
 	 * @return {RegExpBuilder} the current instance for method chaining
 	 */
@@ -546,7 +569,7 @@ function RegExpBuilder(oConfig) {
 	 * Alias for {@link RegExpBuilder#endLookAhead|endLookAhead} and
 	 * {@link RegExpBuilder#endNegatedLookAhead|endNegatedLookAhead}
 	 * 
-	 * @function
+	 * @method match
 	 * @since 0.2.0
 	 * @memberof RegExpBuilder.prototype
 	 */
@@ -561,6 +584,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method startNegatedLookAhead
 	 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-negated-look-ahead}
 	 * @return {RegExpBuilder} the current instance for method chaining
 	 */
@@ -572,7 +596,7 @@ function RegExpBuilder(oConfig) {
 	/**
 	 * Alias for {@link RegExpBuilder#startNegatedLookAhead|startNegatedLookAhead}
 	 * 
-	 * @function
+	 * @method ifNotFollwedBy
 	 * @since 0.2.0
 	 * @memberof RegExpBuilder.prototype
 	 */
@@ -587,6 +611,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method endNegatedLookAhead
 	 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-negated-look-ahead}
 	 * @return {RegExpBuilder} the current instance for method chaining
 	 */
@@ -602,6 +627,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method useGroup
 	 * @param {integer}
 	 *            iGroupNumber the group number
 	 * @return {RegExpBuilder} the current instance for method chaining
@@ -619,6 +645,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method withNotGreedy
 	 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-questionmark}
 	 * @return {RegExpBuilder} the current instance for method chaining
 	 */
@@ -633,6 +660,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method or
 	 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-or}
 	 * @return {RegExpBuilder} the current instance for method chaining
 	 */
@@ -655,6 +683,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.3.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method and
 	 * @return {RegExpBuilder} the current instance for method chaining
 	 */
 	this.and = function() {
@@ -669,6 +698,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.3.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method addAlias
 	 * @param {string}
 	 *            sMethodName the method name of the method of which one an alias shoule be created
 	 * @param {string}
@@ -701,6 +731,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.4.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method deleteAlias
 	 * @param {string}
 	 *            sAliasName the name of the alias method
 	 * @returns {boolean} if a method to delete was found it returns true, false if not
@@ -729,6 +760,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method toString
 	 * @return {string} the internal regex pattern as a string
 	 */
 	this.toString = function() {
@@ -742,6 +774,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.3.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method getConfiguration
 	 * @return {object} the current configuration object
 	 */
 	this.getConfiguration = function() {
@@ -754,6 +787,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method clear
 	 * @return {void}
 	 */
 	this.clear = function() {
@@ -770,6 +804,7 @@ function RegExpBuilder(oConfig) {
 	 * @public
 	 * @since 0.1.0
 	 * @memberof RegExpBuilder.prototype
+	 * @method build
 	 * @return {RegExp} a new RegExp which matches the build pattern
 	 * @throws {RegExpBuilderException}
 	 *             if open groups existing and the corresponding config attribute is set
