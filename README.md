@@ -9,13 +9,13 @@ Just add the RegExpBuilder.js file from the js folder to your project.
 ```javascript
 var builder = new RegExpBuilder();
 builder.startLine().matchesFor("-+").zeroOrOneTimes()
- .and().matchesFDigit().zeroOrMoreTimes()
+ .and().matchesDigit().zeroOrMoreTimes()
  .and().matchesText(".").zeroOrOneTimes()
- .and().matchesFDigit().oneOrMoreTimes()
+ .and().matchesDigit().oneOrMoreTimes()
  .beginGroup()
 	.matchesFor("eE")
 	.and().matchesFor("-+").zeroOrOneTimes()
-	.matchesFDigit().oneOrMoreTimes()
+	.matchesDigit().oneOrMoreTimes()
  .endGroup().oneOrMoreTimes().endLine();
  var regExp = builder.build();
 ```
