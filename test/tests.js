@@ -7,6 +7,7 @@ var sTestTextExcaped = "ab\\?";
 
 // TODO add build test
 // TODO add warpTextInsideGroup test
+// TODO test for deleteAlias
 
 QUnit.module("RegExpBuilder - Class associatied Tests", function() {
 
@@ -15,10 +16,23 @@ QUnit.module("RegExpBuilder - Class associatied Tests", function() {
 	});
 
 	QUnit.test("Test class instanciation", function(assert) {
-		// TODO add check if instance of RegExpBuilder
 		assert.ok(new RegExpBuilder(), "A new instance can created");
+		assert.ok(new RegExpBuilder() instanceof RegExpBuilder, "A new regexpbuilder is a instance of RegExpBuilder");
 		assert.notStrictEqual(new RegExpBuilder(), new RegExpBuilder(), "Two new instances are different");
+
 	});
+});
+
+QUnit.module("RegExpBuilder - Development associatied tests", function() {
+
+	QUnit.test("Test only public methods and attributes are avaiable", function(assert) {
+		// private methods/attributes beginning with a '_'
+		var bSuccess = true;
+		Object.keys(new RegExpBuilder()).forEach(function(sProperty) {
+			bSuccess = bSuccess && !sProperty.startsWith("_");
+		});
+		assert.ok(bSuccess, "No private methods and attributes are accessible");
+	})
 });
 
 QUnit.module("RegExpBuilder - Configuration associatied Tests", function() {
@@ -133,7 +147,7 @@ QUnit.module("RegExpBuilder - Method associatied Tests", function() {
 						assert.ok(builder[sTestName], "The method " + sTestName + " exists");
 						builder[sTestName].apply(builder, aParameters);
 						assert.strictEqual(builder.toString(), sExpectetResult, "Execution of " + sTestName
-								+ " changes the internal pattern to the expectet reuslt");
+								+ " changes the internal pattern to the expectet result");
 					});
 				});
 	})({
@@ -163,7 +177,11 @@ QUnit.module("RegExpBuilder - Method associatied Tests", function() {
 		or : [ "|" ],
 		ifFollowedBy : [ "(?=" ],
 		ifNotFollwedBy : [ "(?!" ],
-		and : [ "" ]
+		and : [ "" ],
+		matchesAnyDigit : [ "[0-9]" ],
+		matchesLetter : [ "[a-zA-Z]" ],
+		matchesUppercaseLetter : [ "[A-Z]" ],
+		matchesLowercaseLetter : [ "[a-z]" ]
 	});
 
 	QUnit.test("freeText - Test for the method freeText", function(assert) {
@@ -190,8 +208,9 @@ QUnit.module("RegExpBuilder - Method associatied Tests", function() {
 			return oError instanceof RegExpBuilderException;
 		}, "If called a non RegExpBuilder instance the method throws an error");
 
-		var sRegEx = new RegExpBuilder().matchesBuilder(new RegExpBuilder().matchesText("abc")).matchesText("123").toString();
-		assert.strictEqual("abc123", sRegEx, "The builder was successfully added");
+		var oRegExp = new RegExpBuilder().matchesText("abc");
+		var sRegEx = new RegExpBuilder().matchesBuilder(oRegExp).matchesText("123").toString();
+		assert.strictEqual(sRegEx, "(?:abc)(?:123)", "The builder was successfully added");
 	});
 
 	QUnit.test("matchesRegExp - Test for the method matchesRegExp", function(assert) {
