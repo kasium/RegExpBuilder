@@ -1,7 +1,12 @@
 # RegExpBuilder
-This little javascript class helps you to write more readable regex code in javascript.
+This little javascript libary helps you to write more readable regex code in javascript.
+
 ## Installation
 Just add the RegExpBuilder.js file from the js folder to your project.
+
+##Compatibility
+This libary is compatible with everything which has ECMAScript5 implemented.
+The tests are using the promise feature of ECMAScript6.
 
 ##Examples
 
