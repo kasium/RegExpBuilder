@@ -4,10 +4,10 @@
 
 	var _aRegexCharacters = ["(", ")", "/", ".", "*", "?", "+", "$", "^", "=", "!"];
 	var _oDefaultValues = {
-		groupValidation: [true, _isBool],
-		wrapInsideGroup: [false, _isBool],
-		wrapTextInsideGroup: [false, _isBool],
-		flags: [[], _isArray]
+		groupValidation: [true, _isBool, "boolean"],
+		wrapInsideGroup: [false, _isBool, "boolean"],
+		wrapTextInsideGroup: [false, _isBool, "boolean"],
+		flags: [[], _isArray, "Array"]
 	};
 	var _OPEN_GROUP = {
 		beginMissing: "Before closing a group you must open one",
@@ -29,12 +29,28 @@
 		if (!oConfiguration) {
 			oConfiguration = {};
 		}
+		oConfiguration = _clone(oConfiguration);
+		var oNewConfig = {};
 		Object.keys(oStandardValues).forEach(function(sAttributeName) {
-			var bAttributeValue = oConfiguration[sAttributeName];
+			var vAttributeValue = oConfiguration[sAttributeName];
 			var aDefault = oStandardValues[sAttributeName];
-			oConfiguration[sAttributeName] = aDefault[1](bAttributeValue) ? bAttributeValue : aDefault[0];
+			if(aDefault[1](vAttributeValue)) {
+				oNewConfig[sAttributeName] = vAttributeValue;
+			} else {
+				oNewConfig[sAttributeName] = aDefault[0];
+				if(vAttributeValue !== undefined && vAttributeValue !== null) {
+					window.console.warn("Found wrong type for property " + sAttributeName + ". Expected " + aDefault[2] + " but found " + typeof(vAttributeValue));
+				}
+			}
+			delete oConfiguration[sAttributeName];
+
 		});
-		return oConfiguration;
+		if(Object.keys(oConfiguration).length !== 0) {
+			Object.keys(oConfiguration).forEach(function(sPropertyName) {
+				window.console.warn("Found illegal propertry " + sPropertyName + " inside the configuration object");
+			});
+		}
+		return oNewConfig;
 	}
 
 	function _isBool(value) {
@@ -121,9 +137,9 @@
 	 *            wraps the output of the {@link RegExpBuilder#matchesText|matchesText method} everytime inside a group
 	 * @param {array}[oConfig.flags=[]]
 	 *            Adds {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-backspace|regex flags} to the builder.
-	 * 			  Illegal flags are ignored
+	 * 			  No validation is done
 	 * @author Kai Mueller
-	 * @version 0.5.0
+	 * @version 0.6.0
 	 */
 	window.RegExpBuilder = function(oConfig) {
 		if (!(this instanceof RegExpBuilder)) {
@@ -156,7 +172,7 @@
 		 * @param {string} sText the text to add to the internal patterm
 		 */
 		_add: function(sText) {
-			this._sRegExpPattern = this._sRegExpPattern + sText;
+			this._sRegExpPattern += sText;
 		},
 
 		/**
@@ -185,8 +201,8 @@
 		 * @param {boolean} specifies if a positiv or negative look ahead
 		 */
 		_startLookAhead: function(bNegate) {
-			this._validationStack.push(_OPEN_LOOK_AHEAD);
 			var sSign = "=";
+			this._validationStack.push(_OPEN_LOOK_AHEAD);
 			if (bNegate) {
 				sSign = "!";
 			}
@@ -212,8 +228,8 @@
 		 * @param {boolean} specifies if a captures or not
 		 */
 		_startGroup: function(bCaptured) {
-			this._validationStack.push(_OPEN_GROUP);
 			var sSign = "";
+			this._validationStack.push(_OPEN_GROUP);
 			if (!bCaptured) {
 				sSign = "?:";
 			}
@@ -232,6 +248,33 @@
 		},
 
 		// ######### matches #########
+
+		/**
+		 * Adds a matcher to the pattern. Possible is text which will be escaped, an instance of RegExp or RegExpBuilder.
+		 *
+		 * @public
+		 * @since 0.6.0
+		 * @param {string|RegExp|RegExpBuilder}
+		 *            vVar the object to add
+		 * @return {RegExpBuilder} the current instance for method chaining
+		 * @throws {RegExpBuilderException} if an illegal argument was overgiven
+		 */
+		matches: function(vVar) {
+			if(vVar instanceof RegExp) {
+				this.matchesRegExp(vVar);
+			}
+			else if(vVar instanceof RegExpBuilder) {
+				this.matchesBuilder(vVar);
+			}
+			else if(typeof(vVar) === "string") {
+				this.matchesText(vVar);
+			}
+			else {
+				throw new RegExpBuilderException("Illegal argument of type " + typeof(vVar));
+			}
+			return this;
+		},
+
 		/**
 		 * Adds a free text to a pattern. Free means no escaping is done, so it is possible to use regex symbols here.
 		 *
@@ -241,7 +284,7 @@
 		 *            sText text to add
 		 * @return {RegExpBuilder} the current instance for method chaining
 		 */
-		matchesFreeText: function matchesFreeText(sText) {
+		matchesFreeText: function(sText) {
 			this._add(sText);
 			return this;
 		},
@@ -257,6 +300,7 @@
 		 * @return {RegExpBuilder} the current an instance for method chaining
 		 * @throws {RegExpBuilderException}
 		 *             if oRegExp is not a instance of RegExp
+		 * @Deprecated use 'matches' instead
 		 */
 		matchesRegExp: function(oRegExp) {
 			this._add(_regExpToString(oRegExp));
@@ -275,6 +319,7 @@
 		 * @return {RegExpBuilder} the current an instance for method chaining *
 		 * @throws {RegExpBuilderException}
 		 *             if oRegExpBuilder is not a instance of RegExpBuilder
+		 * @Deprecated use 'matches' instead
 		 */
 		matchesBuilder: function(oRegExpBuilder) {
 			if (!oRegExpBuilder || oRegExpBuilder instanceof RegExpBuilder === false) {
@@ -466,7 +511,7 @@
 			this._add("\\W");
 			return this;
 		},
-		
+
 		/**
 		 * Adds a matcher for a NULL character. This is equivalent to the regex function '\0'
 		 *
@@ -568,11 +613,14 @@
 		 * @since 0.1.0
 		 * @param {string}
 		 *            sText text to match
+		 * @param {boolean}
+		 * 			  [bGroup=false] defines of the text should be group inside a captured group
 		 * @return {RegExpBuilder} the current instance for method chaining
+		 * @Deprecated use 'matches' instead
 		 */
-		matchesText: function(sText) {
+		matchesText: function(sText, bGroup) {
 			if (sText.length !== 0) {
-				if (this._oConfig.wrapTextInsideGroup) {
+				if (this._oConfig.wrapTextInsideGroup || bGroup) {
 					this._add("(" + _escape(sText) + ")");
 				} else if (sText.length === 1) {
 					this._add(_escape(sText));
@@ -627,7 +675,7 @@
 		 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-plus}
 		 * @return {RegExpBuilder} the current instance for method chaining
 		 */
-		oneOrMoreTimes: function(sText) {
+		oneOrMoreTimes: function() {
 			this._add("+");
 			return this;
 		},
@@ -655,7 +703,7 @@
 		 * @see {@link  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-questionmark}
 		 * @return {RegExpBuilder} the current instance for method chaining
 		 */
-		zeroOrOneTimes: function(sText) {
+		zeroOrOneTimes: function() {
 			this._add("?");
 			return this;
 		},
@@ -932,7 +980,6 @@
 		 *            sMethodName the method name of the method of which one an alias shoule be created
 		 * @param {string}
 		 *            sAliasName the name of the alias method
-		 * @return {RegExpBuilder} the current instance for method chaining
 		 * @throws {RegExpBuilderException}
 		 *             if the method for the alias not exists or the name of the alias is used by somebody other
 		 */
@@ -961,11 +1008,10 @@
 		 * @param {string}
 		 *            sAliasName the name of the alias method
 		 * @returns {boolean} if a method to delete was found it returns true, false if not
-		 * @return {RegExpBuilder} the current instance for method chaining
 		 */
 		deleteAlias: function(sAliasName) {
 			var bFound = false;
-			var iFoundElementIndex;
+			var iFoundElementIndex = 0;
 			this._aAliasList.forEach(function(oAlias, iIndex) {
 				if (oAlias.aliasName === sAliasName) {
 					bFound = true;
@@ -977,6 +1023,18 @@
 				_removeFromArray(this._aAliasList, iFoundElementIndex);
 			}
 			return bFound;
+		},
+
+		/**
+		 * Return all alias as an array with objects. The objects have two attributes: 'methodName',
+		 * the name of the original method and 'aliasName', the name of the alias method
+		 *
+		 * @public
+		 * @since 0.6.0
+		 * @return {array} a list of all alias
+		 */
+		getAliasList: function() {
+			return this._aAliasList;
 		},
 
 		/**

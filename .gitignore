@@ -1,6 +1,7 @@
 /.project
+/.idea
+/.eslintrc
 
 /generate-js-doc.txt
-
+/generate-js-doc.bat
 /jsdoc-config.json
-/.eslintrc
