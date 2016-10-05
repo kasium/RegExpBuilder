@@ -5,14 +5,50 @@
  * -better build test
  * -the message for exceptions
  * -add result testing of build
- * -matches text
- * -matches times
  */
 
 var sTestTextEscapedGroups = "(?:ab\\?)";
 var sTestTextGroups = "(ab?)";
 var sTestText = "ab?";
 var sTestTextExcaped = "ab\\?";
+
+/**
+ * 
+ * @param {Object} sMethodName the method name of the console object to test
+ * @param {string} sExpectedText the expected text with which the method should called
+ * @param {boolean} bSupress defines, if the output should be suppresed
+ */
+function testConsoleOutput(sMethodName, sExpectedText, bSupress) {
+	var oldMethod = console[sMethodName];
+	var iCounter = 0;
+	var bSuccess = false;
+	console[sMethodName] = function(sText) {
+		if (sText === sExpectedText) {
+			bSuccess = true;
+		}
+		if (bSupress !== true) {
+			oldMethod(sText);
+		}
+	};
+	return new Promise(function(resolve, reject) {
+		function testOutput() {
+			//50 => 50*100= 5 seconds
+			if (iCounter === 50 && !bSuccess) {
+				reject();
+			}
+			if (bSuccess) {
+				resolve();
+			}
+			iCounter++;
+			setTimeout(testOutput, 100);
+		}
+		testOutput();
+	});
+}
+
+function testWarnOutput(sExpectedText, bSupress) {
+	return testConsoleOutput("warn", sExpectedText, bSupress);
+}
 
 QUnit.module("RegExpBuilder - Class associatied Tests", function() {
 
@@ -62,7 +98,7 @@ QUnit.module("RegExpBuilder - Configuration associatied Tests", function() {
 			wrapInsideGroup: false,
 			wrapTextInsideGroup: false
 		};
-		var oConfig = new RegExpBuilder().getConfiguration();
+		oConfig = new RegExpBuilder().getConfiguration();
 		assert.deepEqual(oDefaultValues, oConfig, "The default values are the same as expectet");
 
 		var oOtherValues = {
@@ -73,6 +109,30 @@ QUnit.module("RegExpBuilder - Configuration associatied Tests", function() {
 		};
 		oConfig = new RegExpBuilder(oOtherValues).getConfiguration();
 		assert.deepEqual(oOtherValues, oConfig, "All properties are customisable");
+	});
+
+	QUnit.test("Test wrong configuration", function(assert) {
+		var done = assert.async(2);
+		var oPromise = testWarnOutput("Found illegal propertry noProperty inside the configuration object").then(function() {
+			assert.ok(true, "Warning for illegal property was shown");
+			done();
+		});
+		var oPromiseTwo = testWarnOutput("Found wrong type for property wrapInsideGroup. Expected boolean but found string").then(function() {
+			assert.ok(true, "Warning for wrong property type was shown");
+			done();
+		});
+		var oRegExpBuilder = new RegExpBuilder({
+			groupValidation: false,
+			noProperty: 123,
+			wrapInsideGroup: "wrongPropertyType"
+		});
+		var oExpectedConfig = {
+			flags: [],
+			groupValidation: false,
+			wrapInsideGroup: false,
+			wrapTextInsideGroup: false
+		};
+		assert.deepEqual(oExpectedConfig, oRegExpBuilder.getConfiguration(), "No illegal values are inside the config object");
 	});
 
 	QUnit.test("Test configuration wrapInsideGroup for true", function(assert) {
@@ -93,8 +153,7 @@ QUnit.module("RegExpBuilder - Configuration associatied Tests", function() {
 	});
 
 	QUnit.test("Test configuration flags with an empty array", function(assert) {
-		var oRegExp = new RegExpBuilder().matchesText("abc").build();
-		( function(aProperties) {
+		var oRegExp = new RegExpBuilder().matchesText("abc").build(); ( function(aProperties) {
 				aProperties.forEach(function(sPropertyName) {
 					assert.strictEqual(oRegExp[sPropertyName], false, "Property " + sPropertyName + " is false");
 				});
@@ -103,17 +162,22 @@ QUnit.module("RegExpBuilder - Configuration associatied Tests", function() {
 	});
 
 	// QUnit.test("Test configuration flags with an different values", function(assert) {
-		// //TODO
-		// //TODO also pass parameter into build method
+	// //TODO
+	// //TODO also pass parameter into build method
 	// });
-// 
-	// QUnit.test("Test configuration warpTextInsideGroup for false", function(assert) {
-		// //TODO
-	// });
-// 
-	// QUnit.test("Test configuration warpTextInsideGroup for true", function(assert) {
-		// //TODO
-	// });
+	//
+	QUnit.test("Test configuration wrapTextInsideGroup for false", function(assert) {
+		var sPattern = new RegExpBuilder().matchesText("abc").toString();
+		assert.strictEqual(sPattern, "(?:abc)");
+	});
+
+	QUnit.test("Test configuration wrapTextInsideGroup for true", function(assert) {
+		var oBuilder = new RegExpBuilder({
+			wrapTextInsideGroup: true
+		});
+		var sPattern = oBuilder.matchesText("abc").toString();
+		assert.strictEqual(sPattern, "(abc)");
+	});
 
 	(function(oTests) {
 		QUnit.test("Test configuration groupValidation for true", function(assert) {
@@ -226,7 +290,6 @@ QUnit.module("RegExpBuilder - Method associatied Tests", function() {
 		matchesText: [sTestTextEscapedGroups, sTestText],
 		matchesTimes: ["{1,3}", 1, 3],
 		withConstraint: ["{1,3}", 1, 3],
-		withConstraint: ["{1}", 1],
 		oneOrMoreTimes: ["+"],
 		zeroOrMoreTimes: ["*"],
 		zeroOrOneTimes: ["?"],
@@ -256,15 +319,50 @@ QUnit.module("RegExpBuilder - Method associatied Tests", function() {
 		assert.strictEqual(oRegExpBuilder.toString(), sFreeText, "Adding free text is working with no escaping");
 	});
 
+	QUnit.test("matchesText - Test for the method matchesText", function(assert) {
+		var sPattern;
+		sPattern = new RegExpBuilder().matchesText("").toString();
+		assert.strictEqual(sPattern, "", "Empty free text is allowed and has no impact");
+		sPattern = new RegExpBuilder().matchesText("abc").toString();
+		assert.strictEqual(sPattern, "(?:abc)", "Add text is working");
+		sPattern = new RegExpBuilder().matchesText("abc", true).toString();
+		assert.strictEqual(sPattern, "(abc)", "With a true bGroup parameters the text is inside a captured group");
+		sPattern = new RegExpBuilder().matchesText("?abc../d").toString();
+		assert.strictEqual(sPattern, "(?:\\?abc\\.\\.\\/d)", "Text with special regex charactes is escaped");
+	});
+
 	QUnit.test("build - Test for method build", function(assert) {
 		var oRegExp = new RegExpBuilder().build();
 		assert.ok( oRegExp instanceof RegExp, "The method returns a RegExp object");
 
 		oRegExp = new RegExpBuilder().matchesText("abc").build("g");
-		assert.strictEqual(oRegExp.toString(), "/(?:abc)/g", "");
+		assert.strictEqual(oRegExp.toString(), "/(?:abc)/g", "Passing a single flag as a staring adds this to the RegExp object");
 
 		oRegExp = new RegExpBuilder().matchesText("abc").build(["g", "i"]);
-		assert.strictEqual(oRegExp.toString(), "/(?:abc)/gi", "");
+		assert.strictEqual(oRegExp.toString(), "/(?:abc)/gi", "Passing two flags as an array adds this to the RegExp object");
+	});
+
+	QUnit.test("matches - Test for method matches", function(assert) {
+		var oRegExp = new RegExpBuilder().matches("abc?");
+		assert.strictEqual(oRegExp.toString(), "(?:abc\\?)", "A string will be escaped");
+
+		oRegExp = new RegExpBuilder().matches(/abc/);
+		assert.strictEqual(oRegExp.toString(), "abc", "Passing a RegExp object adds this to internal pattern");
+
+		oRegExp = new RegExpBuilder().matches(new RegExpBuilder().matchesText("abc"));
+		assert.strictEqual(oRegExp.toString(), "(?:abc)", "Passing a RegExpBuilder adds this to the internal pattern");
+
+		assert.raises(function() {
+			var oRegExp = new RegExpBuilder().matches();
+		}, function(oError) {
+			return oError instanceof RegExpBuilderException;
+		}, "It is not possible to call the method without a parameter");
+
+		assert.raises(function() {
+			var oRegExp = new RegExpBuilder().matches(23);
+		}, function(oError) {
+			return oError instanceof RegExpBuilderException;
+		}, "It is not possible to call the method with a number");
 	});
 
 	QUnit.test("matchesBuilder - Test for the method matchesBuilder", function(assert) {
@@ -314,27 +412,42 @@ QUnit.module("RegExpBuilder - Method associatied Tests", function() {
 		oRegExpBuilder.clear();
 		assert.strictEqual(oRegExpBuilder.toString(), "", "After call of 'clear' return the toString method an empty string");
 	});
-	
+
+	QUnit.test("matchesTimes - Test for the method matchesTimes", function(assert) {
+		var oRegExpBuilder = new RegExpBuilder().matchesTimes(2);
+		assert.strictEqual("{2}", oRegExpBuilder.toString(), "Adding a exact value is possible");
+		oRegExpBuilder = new RegExpBuilder().matchesTimes(2,3);
+		assert.strictEqual("{2,3}", oRegExpBuilder.toString(), "Adding a minimum and a maximum is possible");
+	});
+
+	//TODO
+	QUnit.test("withConstraint - Test for the method withConstraint", function(assert){
+		var oRegExpBuilder = new RegExpBuilder().matchesTimes(2);
+		assert.strictEqual("{2}", oRegExpBuilder.toString(), "");
+		oRegExpBuilder = new RegExpBuilder().matchesTimes(2,3);
+		assert.strictEqual("{2,3}", oRegExpBuilder.toString(), "");
+	});
+
 	QUnit.test("clone - Test for the method clone", function(assert) {
 		var oRegExpBuilder = new RegExpBuilder().matchesText("123");
 		oRegExpBuilder.addAlias("toString", "toNewString");
 		var oNewBuilder = oRegExpBuilder.clone();
-		
+
 		assert.ok(oNewBuilder, "cloned object is not falsy");
-		assert.ok(oNewBuilder instanceof RegExpBuilder, "clone object is an instance of RegExpBuilder");
+		assert.ok( oNewBuilder instanceof RegExpBuilder, "clone object is an instance of RegExpBuilder");
 		assert.strictEqual(oNewBuilder.toString(), oRegExpBuilder.toString(), "Pattern was clones");
-		assert.ok(typeof(oNewBuilder.toNewString) === "function", "aliases was clones");
-		
+		assert.ok( typeof (oNewBuilder.toNewString) === "function", "aliases was clones");
+
 		oRegExpBuilder.matchesText("abc");
 		assert.notStrictEqual(oNewBuilder.toString(), oRegExpBuilder.toString(), "After cloning the instances are independend (function call)");
-		
+
 		//TODO internal attribute
 		oRegExpBuilder._oConfig.groupValidation = false;
 		assert.notStrictEqual(oNewBuilder._oConfig.groupValidation, oRegExpBuilder._oConfig.groupValidation, "After cloning the instances are independend (object)");
 
 	});
 
-	QUnit.test("addAlias - Test the whole functionallity of addAlias", function(assert) {
+	QUnit.test("addAlias - Test the method addAlias", function(assert) {
 		var oRegExpBuilder = new RegExpBuilder();
 		var sMethodName = "matchesFreeText";
 		var sNewMethodName = "newMethod";
@@ -375,7 +488,7 @@ QUnit.module("RegExpBuilder - Method associatied Tests", function() {
 		assert.strictEqual(oRegExpBuilder2[sMethodName]("abc").toString(), oRegExpBuilder[sNewMethodName]("abc").toString(), "The two methods generating the same output");
 	});
 
-	QUnit.test("deleteAlias - Test the methof deleteAlias", function(assert) {
+	QUnit.test("deleteAlias - Test the method deleteAlias", function(assert) {
 		var oRegExpBuilder = new RegExpBuilder();
 		assert.strictEqual(oRegExpBuilder.deleteAlias(), false, "Call with no argument returns false");
 		assert.strictEqual(oRegExpBuilder.deleteAlias(""), false, "Call with empty string returns false");
@@ -387,4 +500,13 @@ QUnit.module("RegExpBuilder - Method associatied Tests", function() {
 		assert.ok(!oRegExpBuilder["newToString"], "New method was deleted");
 		assert.ok(oRegExpBuilder["toString"], "Old method was not deleted");
 	});
+
+	QUnit.test("getAliasList - Test for the method getAliasList", function(assert) {
+		var oRegExpBuilder = new RegExpBuilder();
+		oRegExpBuilder.addAlias("toString", "aliasToString");
+		oRegExpBuilder.addAlias("build", "aliasBuild");
+		var aGetAliasList = oRegExpBuilder.getAliasList();
+		var aAliasList = [{methodName: "toString", aliasName: "aliasToString"},{methodName: "build", aliasName: "aliasBuild"}]
+		assert.deepEqual(aAliasList, aGetAliasList, "The method returns all alias");
+	})
 });
