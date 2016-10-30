@@ -2,9 +2,11 @@
 
 /*
  * TODO area
- * -better build test
+ * - betterbuild test
  * -the message for exceptions
  * -add result testing of build
+ * -validateMethodInput
+ * -configuration flags + build method
  */
 
 var sTestTextEscapedGroups = "(?:ab\\?)";
@@ -96,7 +98,8 @@ QUnit.module("RegExpBuilder - Configuration associatied Tests", function() {
 			flags: [],
 			groupValidation: true,
 			wrapInsideGroup: false,
-			wrapTextInsideGroup: false
+			wrapTextInsideGroup: false,
+			validateMethodInput: true
 		};
 		oConfig = new RegExpBuilder().getConfiguration();
 		assert.deepEqual(oDefaultValues, oConfig, "The default values are the same as expectet");
@@ -105,7 +108,8 @@ QUnit.module("RegExpBuilder - Configuration associatied Tests", function() {
 			flags: [RegExpBuilder.FLAG_GLOBAL],
 			groupValidation: false,
 			wrapInsideGroup: true,
-			wrapTextInsideGroup: true
+			wrapTextInsideGroup: true,
+			validateMethodInput: false
 		};
 		oConfig = new RegExpBuilder(oOtherValues).getConfiguration();
 		assert.deepEqual(oOtherValues, oConfig, "All properties are customisable");
@@ -130,7 +134,8 @@ QUnit.module("RegExpBuilder - Configuration associatied Tests", function() {
 			flags: [],
 			groupValidation: false,
 			wrapInsideGroup: false,
-			wrapTextInsideGroup: false
+			wrapTextInsideGroup: false,
+			validateMethodInput: true
 		};
 		assert.deepEqual(oExpectedConfig, oRegExpBuilder.getConfiguration(), "No illegal values are inside the config object");
 	});
@@ -161,11 +166,6 @@ QUnit.module("RegExpBuilder - Configuration associatied Tests", function() {
 			}(["global", "ignoreCase", "multiline", "sticky"]));
 	});
 
-	// QUnit.test("Test configuration flags with an different values", function(assert) {
-	// //TODO
-	// //TODO also pass parameter into build method
-	// });
-	//
 	QUnit.test("Test configuration wrapTextInsideGroup for false", function(assert) {
 		var sPattern = new RegExpBuilder().matchesText("abc").toString();
 		assert.strictEqual(sPattern, "(?:abc)");
@@ -256,6 +256,13 @@ QUnit.module("RegExpBuilder - Method associatied Tests", function() {
 				var oResult = builder[sTestName].apply(builder, aParameters);
 				assert.strictEqual(builder.toString(), sExpectetResult, "Execution of " + sTestName + " changes the internal pattern to the expectet result");
 				assert.ok( oResult instanceof RegExpBuilder, "The return value is an instance of RegExpBuilder");
+				if(aParameters.length > 0) {
+					assert.raises(function() {
+						builder[sTestName]();
+					}, function(oError) {
+						return oError instanceof RegExpBuilderException;
+					}, "If called with no parameters the method throws a RegExpBuilderException");
+				}
 			});
 		});
 	})({

@@ -7,6 +7,7 @@
 		groupValidation: [true, _isBool, "boolean"],
 		wrapInsideGroup: [false, _isBool, "boolean"],
 		wrapTextInsideGroup: [false, _isBool, "boolean"],
+		validateMethodInput: [true, _isBool, "boolean"],
 		flags: [[], _isArray, "Array"]
 	};
 	var _OPEN_GROUP = {
@@ -61,13 +62,6 @@
 		return value instanceof Array;
 	}
 
-	function _regExpToString(oRegExp) {
-		if (!oRegExp || oRegExp instanceof RegExp === false) {
-			throw new RegExpBuilderException("The overgiven parameter is undefined, null, or not a instance of RegExp");
-		}
-		return oRegExp.toString().substring(1, oRegExp.toString().length - 1);
-	}
-
 	// Array Remove - By John Resig (MIT Licensed)
 	// Modified by Kai Mueller (MIT Licensed)
 	function _removeFromArray(aArray, iFrom, iTo) {
@@ -111,13 +105,25 @@
 		}
 		if (vAny == null || typeof (vAny) !== "object")
 			return vAny;
-		function tempConstructor() {
+		function Temp() {
 		};
-		tempConstructor.prototype = vAny;
-		var oTempObject = new tempConstructor;
+		Temp.prototype = vAny;
+		var oTempObject = new Temp;
 		for (var key in vAny)
 		oTempObject[key] = _clone(vAny[key]);
 		return oTempObject;
+	}
+
+	function _convertToArray(aArguments) {
+		return Array.prototype.slice.call(aArguments);
+	}
+
+	function _generateArray(sContent, iLength) {
+		var aArray = [];
+		for(var i = 0; i < iLength; i++) {
+			aArray[i] = sContent;
+		}
+		return aArray;
 	}
 
 	/**
@@ -135,11 +141,14 @@
 	 *            wraps the whole generated regex pattern inside a group
 	 * @param {boolean}[oConfig.wrapTextInsideGroup=false]
 	 *            wraps the output of the {@link RegExpBuilder#matchesText|matchesText method} everytime inside a group
+	 * @param {boolean} [oConfig.validateMethodInput=true]
+	 * 			  validates the parameters of all method of this builder. If a method was called with a wrong parameter
+	 * 			  a RegExpBuilderException willl be thrown
 	 * @param {array}[oConfig.flags=[]]
-	 *            Adds {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-backspace|regex flags} to the builder.
-	 * 			  No validation is done
+	 *            Adds {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#special-backspace|regex flags}
+	 *            to the builder. No validation is done
 	 * @author Kai Mueller
-	 * @version 0.6.0
+	 * @version 0.7.0
 	 */
 	window.RegExpBuilder = function(oConfig) {
 		if (!(this instanceof RegExpBuilder)) {
@@ -173,6 +182,38 @@
 		 */
 		_add: function(sText) {
 			this._sRegExpPattern += sText;
+		},
+
+		_validateMethodInput: function(aParameters, vType, iExpectedNumber) {
+			if(this._oConfig.validateMethodInput) {
+				if(aParameters.length !== iExpectedNumber) {
+					throw new RegExpBuilderException("Wrong parameter number; expected "
+						+ iExpectedNumber + " but got " + aParameters.length);
+				}
+				var aTypes;
+				if(typeof(vType) === "string" ) {
+					aTypes = _generateArray(vType, aParameters.length);
+				} else {
+					aTypes = vType;
+				}
+				aParameters.forEach(function(vParameter, iIndex) {
+					if(typeof(vParameter) !==  aTypes[iIndex]) {
+						throw new RegExpBuilderException("Wrong parameter type of parameter " + (iIndex+1) + "; expected "
+							+ aTypes[iIndex] + " but got " + typeof(vParameter));
+					}
+				});
+			}
+		},
+
+		 _regExpToString: function(oRegExp) {
+			if (!oRegExp || oRegExp instanceof RegExp === false) {
+				if(this._oConfig.validateMethodInput) {
+					throw new RegExpBuilderException("The overgiven parameter is undefined, null, or not a instance of RegExp");
+				}
+				return "";
+			} else {
+				return oRegExp.toString().substring(1, oRegExp.toString().length - 1);
+			}
 		},
 
 		/**
@@ -257,7 +298,7 @@
 		 * @param {string|RegExp|RegExpBuilder}
 		 *            vVar the object to add
 		 * @return {RegExpBuilder} the current instance for method chaining
-		 * @throws {RegExpBuilderException} if an illegal argument was overgiven
+		 * @throws {RegExpBuilderException} if an illegal argument was overgiven and the validateMethodInput attribute in configutation is true
 		 */
 		matches: function(vVar) {
 			if(vVar instanceof RegExp) {
@@ -269,7 +310,7 @@
 			else if(typeof(vVar) === "string") {
 				this.matchesText(vVar);
 			}
-			else {
+			else if(this._oConfig.validateMethodInput){
 				throw new RegExpBuilderException("Illegal argument of type " + typeof(vVar));
 			}
 			return this;
@@ -283,8 +324,11 @@
 		 * @param {string}
 		 *            sText text to add
 		 * @return {RegExpBuilder} the current instance for method chaining
+		 * @throws {RegExpBuilderException} if the parameter number or the type of them is wrong and the validateMethodInput
+		 * 				attribute in the configuration is set to true
 		 */
 		matchesFreeText: function(sText) {
+			this._validateMethodInput(_convertToArray(arguments), "string", 1);
 			this._add(sText);
 			return this;
 		},
@@ -303,7 +347,7 @@
 		 * @Deprecated use 'matches' instead
 		 */
 		matchesRegExp: function(oRegExp) {
-			this._add(_regExpToString(oRegExp));
+			this._add(this._regExpToString(oRegExp));
 			return this;
 		},
 
@@ -318,15 +362,17 @@
 		 *            oRegExpBuilder the RegExpBuilder instance to add
 		 * @return {RegExpBuilder} the current an instance for method chaining *
 		 * @throws {RegExpBuilderException}
-		 *             if oRegExpBuilder is not a instance of RegExpBuilder
+		 *             if oRegExpBuilder is not a instance of RegExpBuilder  and the validateMethodInput attribute in configutation is true
 		 * @Deprecated use 'matches' instead
 		 */
 		matchesBuilder: function(oRegExpBuilder) {
 			if (!oRegExpBuilder || oRegExpBuilder instanceof RegExpBuilder === false) {
-				throw new RegExpBuilderException("The overgiven object is undefined, null or not an instance of RegExpBuilder");
+				if(this._oConfig.validateMethodInput) {
+					throw new RegExpBuilderException("The overgiven object is undefined, null or not an instance of RegExpBuilder");
+				}
+				return this;
 			}
-			this.matchesRegExp(oRegExpBuilder.build());
-			return this;
+			return this.matchesRegExp(oRegExpBuilder.build());
 		},
 
 		/**
@@ -352,8 +398,11 @@
 		 * @param {string}
 		 *            sCharacters a list of the characters to match
 		 * @return {RegExpBuilder} the current instance for method chaining
+		 * @throws {RegExpBuilderException} if the parameter number or the type of them is wrong and the validateMethodInput
+		 * 				attribute in the configuration is set to true
 		 */
 		matchesFor: function(sCharacters) {
+			this._validateMethodInput(_convertToArray(arguments), "string", 1);
 			this._add("[" + sCharacters + "]");
 			return this;
 		},
@@ -587,8 +636,11 @@
 		 * @param {string}
 		 *            sCharacters a list of the characters not to match
 		 * @return {RegExpBuilder} the current instance for method chaining
+		 * @throws {RegExpBuilderException} if the parameter number or the type of them is wrong and the validateMethodInput
+		 * 				attribute in the configuration is set to true
 		 */
 		matchesNotFor: function(sCharacters) {
+			this._validateMethodInput(_convertToArray(arguments), "string", 1);
 			this._add("[^" + sCharacters + "]");
 			return this;
 		},
@@ -616,9 +668,16 @@
 		 * @param {boolean}
 		 * 			  [bGroup=false] defines of the text should be group inside a captured group
 		 * @return {RegExpBuilder} the current instance for method chaining
+		 * @throws {RegExpBuilderException} if the parameter number or the type of them is wrong and the validateMethodInput
+		 * 				attribute in the configuration is set to true
 		 * @Deprecated use 'matches' instead
 		 */
 		matchesText: function(sText, bGroup) {
+			if(bGroup) {
+				this._validateMethodInput(_convertToArray(arguments), ["string", "boolean"], 2);
+			} else {
+				this._validateMethodInput(_convertToArray(arguments), "string", 1);
+			}
 			if (sText.length !== 0) {
 				if (this._oConfig.wrapTextInsideGroup || bGroup) {
 					this._add("(" + _escape(sText) + ")");
@@ -645,11 +704,15 @@
 		 * @param {int}
 		 *            iMax (optional) maximum times to match
 		 * @return {RegExpBuilder} the current instance for method chaining
+		 * @throws {RegExpBuilderException} if the parameter number or the type of them is wrong and the validateMethodInput
+		 * 				attribute in the configuration is set to true
 		 */
 		matchesTimes: function(iMin, iMax) {
 			if (iMax) {
+				this._validateMethodInput(_convertToArray(arguments), "number", 2);
 				this._add("{" + iMin + "," + iMax + "}");
 			} else {
+				this._validateMethodInput(_convertToArray(arguments), "number", 1);
 				this._add("{" + iMin + "}");
 			}
 			return this;
@@ -917,8 +980,11 @@
 		 * @param {integer}
 		 *            iGroupNumber the group number
 		 * @return {RegExpBuilder} the current instance for method chaining
+		 * @throws {RegExpBuilderException} if the parameter number or the type of them is wrong and the validateMethodInput
+		 * 				attribute in the configuration is set to true
 		 */
 		useGroup: function(iGroupNumber) {
+			this._validateMethodInput(_convertToArray(arguments), "number", 1);
 			this._add("\\" + iGroupNumber);
 			return this;
 		},
@@ -1082,6 +1148,7 @@
 		clear: function() {
 			this._sRegExpPattern = "";
 			this._validationStack = [];
+			this._aAliasList = [];
 		},
 
 		/**
